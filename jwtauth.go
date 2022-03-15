@@ -64,6 +64,10 @@ func Verifier(ja *JWTAuth) func(http.Handler) http.Handler {
 	return Verify(ja, TokenFromHeader, TokenFromCookie("jwt"))
 }
 
+func VerifierWithCookieName(ja *JWTAuth, cookieName string) func(http.Handler) http.Handler {
+	return Verify(ja, TokenFromHeader, TokenFromCookie(cookieName))
+}
+
 func Verify(ja *JWTAuth, findTokenFns ...func(r *http.Request) string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		hfn := func(w http.ResponseWriter, r *http.Request) {
