@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gpmd/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/jwt"
 )
