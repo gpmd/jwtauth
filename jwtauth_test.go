@@ -141,6 +141,49 @@ func TestSimple(t *testing.T) {
 	}
 }
 
+func TestWithCookieName(t *testing.T) {
+	r := chi.NewRouter()
+
+	r.Use(jwtauth.VerifierWithCookieName(TokenAuthHS256, "jwt"), jwtauth.Authenticator)
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("welcome"))
+	})
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	// sending unauthorized requests
+	if status, resp := testRequest(t, ts, "GET", "/", nil, nil); status != 401 || resp != "no token found\n" {
+		t.Fatalf(resp)
+	}
+
+	h := http.Header{}
+	h.Set("Authorization", "BEARER "+newJwtToken([]byte("wrong"), map[string]interface{}{}))
+	if status, resp := testRequest(t, ts, "GET", "/", h, nil); status != 401 || resp != "token is unauthorized\n" {
+		t.Fatalf(resp)
+	}
+	h.Set("Authorization", "BEARER asdf")
+	if status, resp := testRequest(t, ts, "GET", "/", h, nil); status != 401 || resp != "token is unauthorized\n" {
+		t.Fatalf(resp)
+	}
+	// wrong token secret and wrong alg
+	h.Set("Authorization", "BEARER "+newJwt512Token([]byte("wrong"), map[string]interface{}{}))
+	if status, resp := testRequest(t, ts, "GET", "/", h, nil); status != 401 || resp != "token is unauthorized\n" {
+		t.Fatalf(resp)
+	}
+	// correct token secret but wrong alg
+	h.Set("Authorization", "BEARER "+newJwt512Token(TokenSecret, map[string]interface{}{}))
+	if status, resp := testRequest(t, ts, "GET", "/", h, nil); status != 401 || resp != "token is unauthorized\n" {
+		t.Fatalf(resp)
+	}
+
+	// sending authorized requests
+	if status, resp := testRequest(t, ts, "GET", "/", newAuthHeader(), nil); status != 200 || resp != "welcome" {
+		t.Fatalf(resp)
+	}
+}
+
 func TestMore(t *testing.T) {
 	r := chi.NewRouter()
 
