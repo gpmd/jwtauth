@@ -30,6 +30,7 @@ var (
 	ErrIATInvalid   = errors.New("token iat validation failed")
 	ErrNoTokenFound = errors.New("no token found")
 	ErrAlgoInvalid  = errors.New("algorithm mismatch")
+	ErrTokenInvalid = errors.New("token is of incorrect type")
 )
 
 func New(alg string, signKey interface{}, verifyKey interface{}) *JWTAuth {
@@ -188,7 +189,10 @@ func NewContext(ctx context.Context, t jwt.Token, err error) context.Context {
 }
 
 func FromContext(ctx context.Context) (jwt.Token, map[string]interface{}, error) {
-	token, _ := ctx.Value(TokenCtxKey).(jwt.Token)
+	token, ok := ctx.Value(TokenCtxKey).(jwt.Token)
+	if !ok {
+		return token, nil, ErrTokenInvalid
+	}
 
 	var err error
 	var claims map[string]interface{}
